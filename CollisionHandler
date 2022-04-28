@@ -1,0 +1,83 @@
+
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class CollisionHandle : MonoBehaviour
+{
+
+    [SerializeField] float levelLoadDelay = 1.5f;
+    [SerializeField] AudioClip bigSuccess;
+    [SerializeField] AudioClip crashLanding;
+
+    AudioSource audioSource;
+
+    bool isTransitioning = false; 
+
+    void Start() 
+    {
+        audioSource = GetComponent<AudioSource>();    
+    }
+
+    void OnCollisionEnter(Collision other) 
+    {
+        if (isTransitioning)
+        {
+            return;
+        }
+
+        switch (other.gameObject.tag)
+        {
+            case "Friendly":
+                //Debug.Log("This is the launch pad.");
+                break;
+
+            case "Finish":
+                StartSuccess();
+                break;
+            default: 
+                StartCrashSequence();
+                //Debug.Log("Sorry, you blew up!");
+                break;
+        }
+
+    }
+
+    void StartCrashSequence()
+    {
+        isTransitioning = true;
+        audioSource.Stop();
+        audioSource.PlayOneShot(crashLanding);
+        GetComponent<Movement>().enabled = false;
+        Invoke("ReloadScene", levelLoadDelay);
+
+    }
+
+    void StartSuccess()
+    {
+        isTransitioning = true;
+        audioSource.Stop();
+        audioSource.PlayOneShot(bigSuccess);
+        //add aprticle effect
+        GetComponent<Movement>().enabled = false;
+        Invoke("LoadNextLevel", levelLoadDelay);
+    }
+
+    void LoadNextLevel()
+    {
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        int nextSceneIndex = currentSceneIndex + 1;
+        if (nextSceneIndex == SceneManager.sceneCountInBuildSettings)
+        {
+            nextSceneIndex = 0;
+        }
+
+        SceneManager.LoadScene(nextSceneIndex);
+        
+    }
+
+    void ReloadScene()
+    {
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentSceneIndex);
+    }
+}
